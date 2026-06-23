@@ -1,0 +1,21 @@
+/* ══════════════════════════════════════════
+   JMGMS — Print Styles
+══════════════════════════════════════════ */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: white; font-size: 12px; }
+  .topbar, .sidebar, .page-header-actions, .filter-bar,
+  .td-actions, .btn, #toast-container, .modal-overlay,
+  .tabs, .nav-item, .topbar-toggle { display: none !important; }
+  .app-body { display: block; }
+  .main-content { padding: 0; overflow: visible; height: auto; }
+  .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; margin-bottom: 12px; }
+  table { font-size: 11px; }
+  thead th { background: #f0f0f0 !important; }
+  .receipt-box { border: 2px solid #2d6a4f; page-break-inside: avoid; }
+  .receipt-total { background: #1a3a2a !important; color: white !important; }
+  .receipt-total .amount { color: #c9a84c !important; }
+  .badge { border: 1px solid #ccc; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 14px; }
+}

@@ -1,0 +1,161 @@
+/* ══════════════════════════════════════════
+   JMGMS — Base Styles, Tokens & Typography
+   Jama Masjid Gandhari Management System
+══════════════════════════════════════════ */
+
+:root {
+  --green-deep:  #1a3a2a;
+  --green-mid:   #2d6a4f;
+  --green-soft:  #40916c;
+  --green-pale:  #d8f3dc;
+  --gold:        #c9a84c;
+  --gold-light:  #f0d080;
+  --gold-pale:   #fdf6e3;
+  --cream:       #f8f4ec;
+  --cream-dark:  #ede8db;
+  --ink:         #1c1c1e;
+  --ink-soft:    #3a3a3c;
+  --muted:       #8a8a8e;
+  --red:         #c0392b;
+  --red-pale:    #fee2e2;
+  --blue:        #1a4a7a;
+  --blue-pale:   #dbeafe;
+  --white:       #ffffff;
+  --shadow-sm:   0 1px 4px rgba(0,0,0,.08);
+  --shadow:      0 2px 12px rgba(0,0,0,.10);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,.15);
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   16px;
+  --font-body:   system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-arabic: 'Georgia', serif;
+  --transition:  .18s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--cream-dark); }
+::-webkit-scrollbar-thumb { background: var(--green-soft); border-radius: 99px; }
+
+/* ── TYPOGRAPHY ── */
+h1 { font-size: 26px; font-weight: 800; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 700; }
+h4 { font-size: 13px; font-weight: 700; }
+p  { font-size: 14px; color: var(--ink-soft); }
+a  { color: var(--green-mid); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  font-family: 'Courier New', monospace;
+  background: var(--cream);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: .88em;
+}
+
+/* ── ARABIC ── */
+.arabic {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  letter-spacing: 1px;
+}
+
+/* ── UTILITIES ── */
+.text-muted    { color: var(--muted); }
+.text-green    { color: var(--green-mid); }
+.text-gold     { color: var(--gold); }
+.text-red      { color: var(--red); }
+.text-center   { text-align: center; }
+.text-right    { text-align: right; }
+.fw-bold       { font-weight: 700; }
+.fw-normal     { font-weight: 400; }
+.fs-sm         { font-size: 12px; }
+.fs-xs         { font-size: 11px; }
+.d-flex        { display: flex; }
+.align-center  { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8         { gap: 8px; }
+.gap-12        { gap: 12px; }
+.gap-16        { gap: 16px; }
+.mt-4          { margin-top: 4px; }
+.mt-8          { margin-top: 8px; }
+.mt-12         { margin-top: 12px; }
+.mt-16         { margin-top: 16px; }
+.mt-20         { margin-top: 20px; }
+.mb-8          { margin-bottom: 8px; }
+.mb-12         { margin-bottom: 12px; }
+.mb-16         { margin-bottom: 16px; }
+.mb-20         { margin-bottom: 20px; }
+.w-full        { width: 100%; }
+.hidden        { display: none !important; }
+.visible       { display: block !important; }
+
+/* ── DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--cream-dark);
+  margin: 16px 0;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+.empty-state p  { font-size: 13px; }
+
+/* ── TOAST ── */
+#toast-container {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600;
+  color: var(--white);
+  box-shadow: var(--shadow-lg);
+  animation: toastIn .28s ease;
+  min-width: 220px; max-width: 340px;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast-success { background: var(--green-mid); }
+.toast-error   { background: var(--red); }
+.toast-info    { background: var(--blue); }
+.toast-warn    { background: #c17f24; }
+@keyframes toastIn { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  width: 24px; height: 24px;
+  border: 3px solid var(--cream-dark);
+  border-top-color: var(--green-mid);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── PRINT BASE ── */
+@media print {
+  body { background: white; }
+  #toast-container { display: none !important; }
+}
