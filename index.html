@@ -4712,7 +4712,7 @@ function saveFirebaseConfig() {
     }
     console.log(raw);
 	console.log(cleaned);
-	const config = JSON.parse(cleaned);
+	const config = Function("return (" + cleaned + ")")();
     if (!config.apiKey)      { toast('Missing apiKey in config', 'error'); return; }
     if (!config.databaseURL) { toast('Missing databaseURL. Enable Realtime Database in Firebase console.', 'error'); return; }
     localStorage.setItem('jmgms_firebase_config', JSON.stringify(config));
