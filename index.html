@@ -10470,6 +10470,188 @@ const GDrive = (() => {
   return { init, signIn, signOut, isSignedIn, isConfigured, backup, restore, _setClientId };
 })();
 
+
+
+// ══════════════════════════════════════════
+//  FIREBASE ONLINE SYNC MODULE
+// ══════════════════════════════════════════
+const FireSync = (() => {
+  let _db      = null;
+  let _ref     = null;
+  let _syncing = false;
+  let _ready   = false;
+
+  function _getConfig() {
+    // Read from localStorage (set via Settings UI)
+    try {
+      const saved = localStorage.getItem('jmgms_firebase_config');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return null;
+  }
+
+  function isConfigured() {
+    const c = _getConfig();
+    return !!(c && c.apiKey && c.databaseURL);
+  }
+
+  function isReady() { return _ready && !!_ref; }
+
+  function init() {
+    if (!isConfigured()) {
+      console.log('FireSync: not configured yet.');
+      return;
+    }
+    _loadSDK(() => _initFirebase(_getConfig()));
+  }
+
+  function _loadSDK(callback) {
+    if (typeof firebase !== 'undefined') { callback(); return; }
+    const scripts = [
+      'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+      'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+    ];
+    let loaded = 0;
+    scripts.forEach(src => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload  = () => { loaded++; if (loaded === scripts.length) callback(); };
+      s.onerror = () => console.warn('Failed to load Firebase SDK — check internet');
+      document.head.appendChild(s);
+    });
+  }
+
+  function _initFirebase(config) {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(config);
+      _db  = firebase.database();
+      _ref = _db.ref('jmgms');
+      _listenForChanges();
+      _ready = true;
+      _updateSyncStatusUI('connected');
+      console.log('🔥 Firebase sync ready');
+    } catch(e) {
+      console.warn('Firebase init error:', e);
+      _updateSyncStatusUI('error');
+      toast('Firebase error: ' + e.message, 'error');
+    }
+  }
+
+  function _listenForChanges() {
+    if (!_ref) return;
+    let _firstLoad = true;
+    _ref.on('value', snapshot => {
+      const data = snapshot.val();
+
+      // First load — if cloud empty, push local data up
+      if (_firstLoad) {
+        _firstLoad = false;
+        if (!data || !data.families) {
+          console.log('FireSync: Cloud empty — pushing local data');
+          push();
+          return;
+        }
+      }
+
+      if (_syncing) return;
+      if (!data) return;
+
+      const local    = DB.get();
+      const remoteTs = data.lastModified || 0;
+      const localTs  = local.lastModified || 0;
+
+      // Only pull from cloud if it's newer by more than 3 seconds
+      if (remoteTs > localTs + 3000) {
+        _syncing = true;
+        // Preserve local session/settings not in cloud
+        const merged = { ...data };
+        DB.importJSON(JSON.stringify(merged));
+        _syncing = false;
+        refreshAll();
+        _updateSyncStatusUI('connected');
+        toast('🔄 Data synced from cloud', 'info');
+      }
+    }, err => {
+      console.warn('Firebase listen error:', err.code, err.message);
+      _updateSyncStatusUI('error');
+      if (err.code === 'PERMISSION_DENIED') {
+        toast('Firebase permission denied. Set Realtime Database rules to: allow read, write: if true;', 'error');
+      }
+    });
+  }
+
+  function push() {
+    if (!isReady()) return;
+    _syncing = true;
+    const data = { ...DB.get(), lastModified: Date.now() };
+    _ref.set(data)
+      .then(() => { _syncing = false; })
+      .catch(e => { _syncing = false; console.warn('Firebase push error:', e); });
+  }
+
+  function _updateSyncStatusUI(status) {
+    const el = document.getElementById('sync-status-badge');
+    if (!el) return;
+    const map = {
+      'connected':      '<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">🟢 Connected — Auto-syncing</span>',
+      'not-configured': '<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">🟡 Not configured</span>',
+      'connecting':     '<span style="background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">🔵 Connecting…</span>',
+      'error':          '<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">🔴 Error — check config</span>',
+    };
+    el.innerHTML = map[status] || map['not-configured'];
+  }
+
+  function getStatus() {
+    if (!isConfigured()) return 'not-configured';
+    if (!_ready)         return 'connecting';
+    return 'connected';
+  }
+
+  return { init, push, isConfigured, isReady, getStatus };
+})();
+
+// Auto-push to Firebase after every DB.save()
+const _origSave = DB.save.bind(DB);
+DB.save = function() {
+  const result = _origSave();
+  if (FireSync.isReady()) FireSync.push();
+  return result;
+};
+
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  DB.load();
+  // Only seed on first install (empty database)
+  const _db = DB.get();
+  if (!_db.families || _db.families.length === 0) {
+    seedData();
+  }
+
+  // Init Google Drive & Firebase
+  GDrive.init();
+  FireSync.init();
+
+  // Restore session if available
+  const session = Auth.restoreSession();
+  if (session) {
+    renderAuthenticatedUI(session);
+    // Show latest announcement popup after login restore
+    setTimeout(checkAndShowLatestAnnouncement, 2000);
+  }
+
+  // Request push notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    setTimeout(() => PushNotif.requestPermission(), 3000);
+  }
+
+  // Android hardware back button
+  document.addEventListener('backbutton', (e) => {
+    e.preventDefault(); exitApp();
+  }, false);
+
+  updatePendingBadge();
+  console.log('🕌 JMGMS v1.0 loaded — Bismillah!');
 });
 </script>
 </body></html>
